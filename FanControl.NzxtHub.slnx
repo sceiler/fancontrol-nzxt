@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FanControl.NzxtHub/FanControl.NzxtHub.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FanControl.NzxtHub.Tests/FanControl.NzxtHub.Tests.csproj" />
+  </Folder>
+</Solution>

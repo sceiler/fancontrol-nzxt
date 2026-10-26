@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>FanControl.NzxtHub</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FanControl.Plugins">
+      <HintPath>../../lib/FanControl.Plugins.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="HidSharp">
+      <HintPath>../../lib/HidSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <InternalsVisibleTo Include="FanControl.NzxtHub.Tests" />
+  </ItemGroup>
+</Project>
