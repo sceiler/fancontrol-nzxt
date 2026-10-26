@@ -9,7 +9,7 @@ if not plugin.is_file():
     raise SystemExit("Run dotnet build -c Release first.")
 dest = root / "dist"
 dest.mkdir(exist_ok=True)
-archive = dest / "FanControl.NzxtHub-0.1.0.zip"
+archive = dest / "FanControl.NzxtHub-0.1.1.zip"
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
     bundle.write(plugin, plugin.name)
     bundle.write(root / "README.md", "README.md")

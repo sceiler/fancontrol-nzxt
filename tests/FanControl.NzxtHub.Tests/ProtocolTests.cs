@@ -39,10 +39,13 @@ public sealed class ProtocolTests
     [Theory]
     [InlineData(64, 64, true)]
     [InlineData(64, 512, true)]
+    [InlineData(512, 512, true)]
+    [InlineData(512, 64, true)]
+    [InlineData(65, 512, true)]
     [InlineData(64, 63, false)]
+    [InlineData(63, 512, false)]
     [InlineData(0, 512, false)]
-    [InlineData(65, 512, false)]
-    public void AcceptsLargerOutputDescriptorsWithoutAcceptingOtherInputLayouts(int input, int output, bool expected)
+    public void AcceptsDescriptorCapacitiesThatFitFanReports(int input, int output, bool expected)
     {
         Assert.Equal(expected, Protocol.CanUseReports(input, output));
     }
@@ -75,6 +78,22 @@ public sealed class ProtocolTests
         Assert.Equal(new[] { 1200, 800, 900, 1000, 1500 }, result.Select(f => f.Rpm));
         Assert.Equal(new byte[] { 40, 30, 50, 70, 90 }, result.Select(f => f.Duty));
         Assert.All(result, reading => Assert.True(reading.Connected));
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(512)]
+    public void ParsesStatusInADescriptorSizedBufferWithoutInterpretingTheTail(int receivedLength)
+    {
+        var buffer = new byte[512];
+        Array.Fill(buffer, (byte)0xa5); // Tail is not part of the fan-status fields.
+        Status().CopyTo(buffer, 0);
+        var result = Protocol.ParseStatus(Model, buffer, receivedLength)!;
+        Assert.Equal(new[] { 1200, 800, 900, 1000, 1500 }, result.Select(f => f.Rpm));
+        Assert.Equal(new byte[] { 40, 30, 50, 70, 90 }, result.Select(f => f.Duty));
+        Assert.Null(Protocol.ParseStatus(Model, buffer, 63)); // Buffer capacity is not bytes received.
+        buffer[1] = 1;
+        Assert.Null(Protocol.ParseStatus(Model, buffer, receivedLength));
     }
 
     [Fact]

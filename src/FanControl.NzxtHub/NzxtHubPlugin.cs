@@ -27,6 +27,7 @@ public sealed class NzxtHubPlugin : IPlugin2
     public void Initialize()
     {
         Close();
+        Log("Starting NZXT Hub plugin " + typeof(NzxtHubPlugin).Assembly.GetName().Version + ".");
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Log("NZXT Control Hub requires Windows; no hardware was opened.");
@@ -53,6 +54,7 @@ public sealed class NzxtHubPlugin : IPlugin2
                     if (!ids.Add(id)) continue;
                     var model = HubModel.Find(device.ProductID)!;
                     workers.Add(new HubWorker(id, model, () => new HidTransport(device), () => clock.Elapsed, Log));
+                    Log("Accepted NZXT 2022 HID collection: input=" + inputLength + ", output=" + outputLength + " bytes.");
                 }
                 catch (Exception error) { Log("Could not inspect an NZXT hub: " + error.Message); }
             }
