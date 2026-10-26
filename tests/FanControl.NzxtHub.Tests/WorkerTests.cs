@@ -11,10 +11,13 @@ public sealed class WorkerTests
         internal readonly BlockingCollection<byte[]> Reads = new();
         internal volatile bool Disposed;
         internal volatile bool FailReads;
+        public int InputReportLength { get; init; } = 64;
 
         public int Read(byte[] buffer)
         {
             if (FailReads) throw new IOException("Disconnected test hub");
+            if (buffer.Length != InputReportLength)
+                throw new IOException($"Read buffer is {buffer.Length} bytes; HID descriptor requires {InputReportLength}.");
             if (!Reads.TryTake(out var bytes, 20)) return 0;
             bytes.CopyTo(buffer, 0);
             return bytes.Length;
@@ -27,6 +30,32 @@ public sealed class WorkerTests
         }
 
         public void Dispose() => Disposed = true;
+    }
+
+    [Theory]
+    [InlineData(64, 64)]
+    [InlineData(512, 64)]
+    [InlineData(512, 512)]
+    public void WorkerReadsDescriptorSizedReportsBeforeControllingTheFan(int descriptorLength, int receivedLength)
+    {
+        var transport = new FakeTransport { InputReportLength = descriptorLength };
+        var report = new byte[receivedLength];
+        ProtocolTests.Status().CopyTo(report, 0);
+        transport.Reads.Add(report);
+        var logs = new ConcurrentQueue<string>();
+        var worker = new HubWorker("test", ProtocolTests.Model, () => transport, () => TimeSpan.Zero, logs.Enqueue);
+        worker.State.Set(4, 70);
+        worker.Start();
+        try
+        {
+            Assert.True(SpinWait.SpinUntil(() => transport.Writes.Any(r => r[0] == 0x62 && r[7] == 70), 2000),
+                string.Join(Environment.NewLine, logs));
+            Assert.Equal(1500, worker.State.Read(4, TimeSpan.Zero)!.Rpm);
+            Assert.Equal(0x60, transport.Writes.ElementAt(0)[0]);
+            Assert.Equal(0x66, transport.Writes.ElementAt(1)[0]);
+            Assert.All(transport.Writes, report => Assert.Equal(64, report.Length));
+        }
+        finally { worker.RequestStop(); worker.Join(); }
     }
 
     [Fact]

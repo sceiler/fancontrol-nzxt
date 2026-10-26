@@ -6,6 +6,7 @@ namespace FanControl.NzxtHub;
 
 internal interface IHubTransport : IDisposable
 {
+    int InputReportLength { get; }
     int Read(byte[] buffer);
     void Write(byte[] report);
 }
@@ -13,9 +14,11 @@ internal interface IHubTransport : IDisposable
 internal sealed class HidTransport : IHubTransport
 {
     private readonly HidStream stream;
+    public int InputReportLength { get; }
 
     internal HidTransport(HidDevice device)
     {
+        InputReportLength = device.GetMaxInputReportLength();
         var configuration = new OpenConfiguration();
         configuration.SetOption(OpenOption.Exclusive, true);
         configuration.SetOption(OpenOption.TimeoutIfInterruptible, 0);

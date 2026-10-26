@@ -47,11 +47,11 @@ internal static class Protocol
 {
     internal const int ReportLength = 64;
 
-    // Input packets are 64 bytes, but the output descriptor can advertise a
-    // larger maximum (NZXT also uses it for RGB). A 64-byte-only output check
-    // would reject a real hub. HidSharp handles output-report padding.
+    // These are maximum HID report capacities, not the fan payload's length.
+    // Windows reports 512-byte input and output capacities on the user's hub.
+    // Validate the actual fan payload separately in ParseStatus.
     internal static bool CanUseReports(int inputLength, int outputLength) =>
-        inputLength == ReportLength && outputLength >= ReportLength;
+        inputLength >= ReportLength && outputLength >= ReportLength;
 
     // These buffers begin with the report ID. Do not prepend another zero when
     // passing them to HidSharp; the NZXT reports use numbered report IDs.

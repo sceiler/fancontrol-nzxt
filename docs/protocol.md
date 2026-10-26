@@ -15,7 +15,9 @@ This is an independent C# implementation of the documented packet fields. It doe
 
 ## Transport and initialization
 
-Fan commands and input packets are 64-byte numbered HID reports, with the report ID at byte zero. HidSharp receives this whole buffer; do not prepend an additional zero byte. The device's output descriptor may advertise a larger maximum (Camless documents 512-byte output reports); it must not be required to equal 64. Accept a matching collection with 64-byte input and at least 64-byte output capacity. HidSharp handles Windows output padding.
+Fan commands and the documented fan-status layout use 64 bytes, with the numbered report ID at byte zero. Do not prepend an additional zero byte. HID descriptor capacities describe the **maximum** report length, including the report ID, rather than the fan payload length ([Microsoft HIDP_CAPS documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/hidpi/ns-hidpi-_hidp_caps)).
+
+The user's Windows V284 log on 2026-10-26 reports **input=512, output=512** for `1e71:2022`. Version 0.1.0 incorrectly required input capacity to equal 64, rejecting the hub before opening it. Version 0.1.1 accepts matching collections with input and output capacities of at least 64 bytes and reads into a buffer sized to `GetMaxInputReportLength()`, as HidSharp's own `Read()` helper does. Status parsing uses the actual received length, requires at least 64 bytes and the `67 02` prefix, and reads only documented fan fields. Trailing bytes are ignored. HidSharp handles Windows output padding; commands retain their 64-byte encoding.
 
 | Operation | Prefix (hex), zero padded to 64 bytes |
 | --- | --- |
@@ -46,6 +48,8 @@ No source inspected documents an automatic/BIOS hand-back command or a stored th
 ## Hardware verification record
 
 - User confirmed Windows hardware ID `VID_1E71&PID_2022`.
+- Windows Fan Control V284 invoked 0.1.0 on 2026-10-26 and enumerated a matching HID collection with input/output capacities of 512 bytes. The old input-size check rejected it; no USB initialization or control was reached.
+- Version 0.1.1 reproduces and fixes that rejection and the undersized read buffer in automated tests. Hardware retest: **pending**.
 - Firmware: not yet recorded.
 - Fan Control: latest release requested; build references pinned to V284.
 - Physical RPM/control, fan-port isolation, reset, shutdown and sleep/resume: **pending**.

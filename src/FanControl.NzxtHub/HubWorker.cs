@@ -88,8 +88,12 @@ internal sealed class HubWorker
                     State.Disconnected();
                     if (stop.WaitOne(0)) break;
                     foreach (var report in Protocol.Initialize()) transport.Write(report);
+                    log("Fan-report initialization sent; waiting for 67 02 status.");
                     var lastValid = clock();
-                    var buffer = new byte[Protocol.ReportLength];
+                    var receivedStatus = false;
+                    // Read a complete HID report even when its advertised maximum
+                    // is larger than the 64-byte fan-status payload.
+                    var buffer = new byte[transport.InputReportLength];
                     while (!stop.WaitOne(0))
                     {
                         var length = transport.Read(buffer);
@@ -97,6 +101,9 @@ internal sealed class HubWorker
                         if (length > 0 && State.Accept(buffer, length, now))
                         {
                             lastValid = now;
+                            if (!receivedStatus)
+                                log("Received first valid fan status (" + length + " bytes).");
+                            receivedStatus = true;
                             if (lastError != null) log("NZXT Control Hub connection recovered.");
                             lastError = null;
                         }

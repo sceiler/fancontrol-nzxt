@@ -2,11 +2,15 @@
 
 A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It exposes the hub's five fan ports as speed controls paired with measured RPM sensors. Fan Control handles the curves, temperature sources, calibration and profiles.
 
-**Status: initial build, automated tests only. Not yet tested in Windows Fan Control or on a physical hub.**
+**Status: hardware-test prerelease. Windows Fan Control V284 invoked the plugin and reported the hub's HID descriptors; physical RPM/control operation remains unverified.**
+
+Download **FanControl.NzxtHub-0.1.1.zip** or the standalone DLL from the [v0.1.1 release assets](https://github.com/sceiler/fancontrol-nzxt/releases/tag/v0.1.1). GitHub's automatic source archives do not contain the compiled plugin.
+
+Version 0.1.1 fixes the `input=512, output=512` discovery rejection in 0.1.0 and sizes USB read buffers to the input descriptor.
 
 ## Install
 
-1. Use the current **x64 Fan Control** release. This build uses the V284 public plugin API and targets .NET Standard 2.0; both V284 host variants provide that API. Windows host loading still needs verification.
+1. Use **x64 Fan Control**. This build uses the V284 public plugin API and targets .NET Standard 2.0; both V284 host variants provide that API. Hardware operation still needs verification.
 2. Exit **NZXT CAM** from its tray icon and disable its automatic startup. Also stop any liquidctl, Camless or RGB tool that opens this same hub. Do not run competing controllers together.
 3. Extract `FanControl.NzxtHub.dll` from the ZIP. If Windows shows an **Unblock** checkbox under the file's **Properties**, select it.
 4. In Fan Control, choose **Settings → Install plugin** and select the DLL. Alternatively, close Fan Control (and stop its service if installed), put the DLL in its `Plugins` folder, and start it again.
@@ -16,6 +20,15 @@ A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It ex
 Fans on a splitter or combined fan assembly attached to one hub port share that port's speed setting. There is no separate control for each physical fan behind a shared port.
 
 The plugin changes fan speeds only. It sends no lighting commands. The last lighting state may remain, but lighting after a restart is not managed by this plugin.
+
+## Update or remove
+
+1. Exit Fan Control completely from its tray icon. If service mode is enabled, press **Win + R**, run `services.msc`, and stop the **FanControl** service.
+2. In the installation folder's `Plugins` directory (including any subfolders), find `FanControl.NzxtHub.dll`.
+3. To update, replace that DLL with the new release's DLL and unblock it in **Properties** if needed. Keep one installed copy. To uninstall, remove the DLL.
+4. Restart the service if used, then Fan Control. Keep your configuration files when updating.
+
+After updating, the log should include `[NzxtHub] Starting NZXT Hub plugin 0.1.1.0.` For the reported 512-byte hub, expect `Accepted NZXT 2022 HID collection: input=512, output=512 bytes.` followed by `Found 1 NZXT Control Hub(s).` A `Received first valid fan status` message confirms that telemetry parsing has started; discovery alone does not confirm working speed control.
 
 ## Runtime behavior
 
@@ -40,7 +53,7 @@ Record the hub firmware version shown in CAM before closing CAM, then check:
 - Disabling a managed control raises that port to full speed, and exiting the hardware-controlling service raises managed ports to full speed.
 - Sleep/resume restores readings and curve control.
 
-If no readings appear, inspect Fan Control's log for `[NzxtHub]`. In service mode, inspect the service log. Messages include discovery count, unexpected report sizes, open failures, stale status and reconnection. Share those messages rather than repeatedly calibrating an unresponsive control.
+If no readings appear, inspect `log.txt` next to `FanControl.exe`; in service mode, also inspect `service_log.txt`. Messages prefixed `[NzxtHub]` include plugin version, discovery count, accepted/rejected report sizes, initialization progress, the first valid status, open failures, stale status and reconnection. For an initialization failure, share the full error block and stack trace, including lines without the prefix, rather than repeatedly calibrating an unresponsive control.
 
 ## Build and test
 
@@ -57,6 +70,6 @@ The reference script downloads an official, pinned V284 archive and checks its S
 
 Build output: `src/FanControl.NzxtHub/bin/Release/netstandard2.0/FanControl.NzxtHub.dll`.
 
-Tests cover packet encoding, a redacted upstream status fixture for the shared packet format, all five ports, invalid reports, stale data, host stalls, shutdown, reset races, reconnection through a fake USB transport, sensor pairing, stable identities and the real Fan Control SDK contract. They do not exercise the Windows HID API or actual hardware.
+Tests cover packet encoding, 64/512-byte HID descriptor capacities and read buffers, padded status packets, a redacted upstream status fixture for the shared packet format, all five ports, invalid reports, stale data, host stalls, shutdown, reset races, reconnection through a fake USB transport, sensor pairing, stable identities and the real Fan Control SDK contract. They do not exercise the Windows HID API or actual hardware.
 
 See [protocol sources](docs/protocol.md) for the commands and evidence used.
