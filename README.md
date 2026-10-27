@@ -1,5 +1,7 @@
 # FanControl.NzxtHub
 
+By [Yi Min Yang](https://www.yiminyang.dev/) · [GitHub: @sceiler](https://github.com/sceiler)
+
 A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It exposes the hub's five fan ports as speed controls paired with measured RPM sensors. Fan Control handles the curves, temperature sources, calibration and profiles.
 
 **Status: hardware-test prerelease. Windows Fan Control V284 invoked the plugin and reported the hub's HID descriptors; physical RPM/control operation remains unverified.**
@@ -7,6 +9,25 @@ A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It ex
 Download **FanControl.NzxtHub-0.1.1.zip** or the standalone DLL from the [v0.1.1 release assets](https://github.com/sceiler/fancontrol-nzxt/releases/tag/v0.1.1). GitHub's automatic source archives do not contain the compiled plugin.
 
 Version 0.1.1 fixes the `input=512, output=512` discovery rejection in 0.1.0 and sizes USB read buffers to the input descriptor.
+
+This independent community project is **not affiliated with, endorsed by, sponsored by, or supported by NZXT**. NZXT, CAM and Kraken are trademarks of NZXT, Inc. This is also not an official Fan Control or Camless project.
+
+> [!WARNING]
+> This plugin controls cooling hardware. Incorrect curves, software faults or communication failures can cause overheating, hardware damage or data loss. Use at your own risk and monitor temperatures while testing. Full-speed fallback is best effort: a crash or broken USB connection can leave the hub at its last duty. The software is provided **as is, without warranty**, to the extent permitted by law; see [LICENSE](LICENSE).
+
+## Origins and credits
+
+[Camless by @kleju13 and its contributors](https://github.com/kleju13/camless) inspired this project. It demonstrated that third-party software could communicate with NZXT hardware and control fans connected to an NZXT Control Hub—the hub normally managed through NZXT CAM. That prompted the idea of bringing this capability to Fan Control as a plugin.
+
+The plugin was developed with OpenAI Codex, consulting Camless's Control Hub implementation, [liquidctl](https://github.com/liquidctl/liquidctl), and the [Fan Control plugin documentation](https://github.com/Rem0o/FanControl.Releases/wiki/Plugins). Thanks to those projects and their contributors for their protocol research, documentation and examples.
+
+This is a C# Fan Control plugin with no Camless runtime dependency. Protocol references and test capture attribution are listed in [docs/protocol.md](docs/protocol.md).
+
+## License
+
+This project's own code and documentation are licensed under the **MIT License**; see [LICENSE](LICENSE). You may use, modify and redistribute them, including commercially, provided you retain the required copyright and permission notice.
+
+Third-party material retains its applicable terms. This license does not relicense Camless, liquidctl, Fan Control or HidSharp.
 
 ## Install
 
@@ -67,6 +88,12 @@ python3 scripts/package.py
 ```
 
 The reference script downloads an official, pinned V284 archive and checks its SHA-256 and both DLL hashes. The host's proprietary `FanControl.Plugins.dll` and its `HidSharp.dll` are build references only: neither is committed nor included in the output package. Python, Camless and liquidctl are not runtime dependencies.
+
+### How the DLL is created
+
+Codex assisted with development; the DLL is compiled by the .NET SDK's C# compiler through MSBuild when you run `dotnet build -c Release`. It is a managed .NET Standard 2.0 class library loaded by Fan Control, not an NZXT driver or firmware image. The project references the pinned Fan Control API and HidSharp assemblies with `Private=false`, so the host supplies them at runtime. `scripts/package.py` packages the already-built DLL, documentation into `dist/FanControl.NzxtHub-0.1.1.zip` and writes a SHA-256 checksum; it does not compile code.
+
+These commands explain the build process in this repository. The inspected history contains no build attestation establishing the exact environment or commands used for the existing release DLL, and no byte-for-byte rebuild comparison was performed. For future releases, record the source commit, SDK version, build log and artifact hash, and provide the matching source alongside the binary. A checksum verifies integrity against a trusted checksum, not authorship or build provenance.
 
 Build output: `src/FanControl.NzxtHub/bin/Release/netstandard2.0/FanControl.NzxtHub.dll`.
 

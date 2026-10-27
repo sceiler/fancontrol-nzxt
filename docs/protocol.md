@@ -11,7 +11,7 @@ Primary implementation references inspected:
 - [Fan Control public plugin contract](https://github.com/Rem0o/FanControl.Releases/wiki/Plugins), verified against the public types of the actual V284 `FanControl.Plugins.dll`.
 - [HIDSharp upstream](https://github.com/SeekHisKingdom/HIDSharp). The V284 modern host ships version 2.6.4 targeting .NET Standard 2.0.
 
-This is an independent C# implementation of the documented packet fields. It does not embed or run those upstream controller drivers. The status test fixture reuses hardware report data from liquidctl's shared-format test, with identity bytes redacted; this fixture is not a Control Hub hardware test.
+This is an independent C# implementation of the documented packet fields. It does not embed or run those upstream controller drivers. The status test fixture reuses hardware report data from liquidctl's shared-format test, with identity bytes redacted; this fixture is not a Control Hub hardware test. The capture originates from [liquidctl issue #292](https://github.com/liquidctl/liquidctl/issues/292#issuecomment-786876335); upstream set the connected fan mode to PWM, and this project's test redacts identity bytes. Credit to the liquidctl authors and contributors; their repository's [GPLv3 license](https://github.com/liquidctl/liquidctl/blob/292dc561361cfbc0cdee155c26662131fe160989/LICENSE.txt) remains available upstream.
 
 ## Transport and initialization
 

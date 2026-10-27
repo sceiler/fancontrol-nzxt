@@ -13,6 +13,7 @@ archive = dest / "FanControl.NzxtHub-0.1.1.zip"
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
     bundle.write(plugin, plugin.name)
     bundle.write(root / "README.md", "README.md")
+    bundle.write(root / "LICENSE", "LICENSE")
     bundle.write(root / "docs/protocol.md", "docs/protocol.md")
 digest = hashlib.sha256(archive.read_bytes()).hexdigest()
 (dest / (archive.name + ".sha256")).write_text(f"{digest}  {archive.name}\n")
