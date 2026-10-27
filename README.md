@@ -1,76 +1,68 @@
 # FanControl.NzxtHub
 
-By [Yi Min Yang](https://www.yiminyang.dev/) · [GitHub: @sceiler](https://github.com/sceiler)
+A [Fan Control](https://github.com/Rem0o/FanControl.Releases) plugin for the **NZXT Control Hub**. Provides speed control and paired RPM readings for all five fan ports. Fan Control manages your curves, temperature sources and profiles.
 
-A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It exposes the hub's five fan ports as speed controls paired with measured RPM sensors. Fan Control handles the curves, temperature sources, calibration and profiles.
+## Compatibility
 
-**Status: working. Fan control on the NZXT Control Hub (`1E71:2022`) has been confirmed by the maintainer on their hardware.**
+- **Controller:** NZXT Control Hub, USB ID `1E71:2022`. Other NZXT controllers and Kraken coolers are not supported.
+- **Host:** Windows, x64 Fan Control. Built against the V284 plugin API, targeting .NET Standard 2.0.
+- **Scope:** Fan speed control only; no RGB control. Fans sharing a port also share its speed setting.
 
-Download **FanControl.NzxtHub-0.1.1.zip** or the standalone DLL from the [v0.1.1 release assets](https://github.com/sceiler/fancontrol-nzxt/releases/tag/v0.1.1). GitHub's automatic source archives do not contain the compiled plugin.
+Fan control has been confirmed on the maintainer's hub. See the [hardware verification record](docs/protocol.md#hardware-verification-record) for details and remaining checks. NZXT CAM, Camless, liquidctl and Python are not required to run the plugin.
 
-Version 0.1.1 fixes the `input=512, output=512` discovery rejection in 0.1.0 and sizes USB read buffers to the input descriptor.
+### Identify your controller
 
-This independent community project is **not affiliated with, endorsed by, sponsored by, or supported by NZXT**. NZXT, CAM and Kraken are trademarks of NZXT, Inc. This is also not an official Fan Control or Camless project.
+Open **Windows PowerShell** and list connected NZXT devices with [Get-PnpDevice](https://learn.microsoft.com/en-us/powershell/module/pnpdevice/get-pnpdevice):
 
-> [!WARNING]
-> This plugin controls cooling hardware. Incorrect curves, software faults or communication failures can cause overheating, hardware damage or data loss. Use at your own risk and monitor temperatures while testing. Full-speed fallback is best effort: a crash or broken USB connection can leave the hub at its last duty. The software is provided **as is, without warranty**, to the extent permitted by law; see [LICENSE](LICENSE).
+```powershell
+Get-PnpDevice -PresentOnly |
+    Where-Object { $_.InstanceId -like '*VID_1E71&PID_*' } |
+    Format-List FriendlyName, InstanceId
+```
 
-## Origins and credits
-
-[Camless by @kleju13 and its contributors](https://github.com/kleju13/camless) inspired this project. It demonstrated that third-party software could communicate with NZXT hardware and control fans connected to an NZXT Control Hub—the hub normally managed through NZXT CAM. That prompted the idea of bringing this capability to Fan Control as a plugin.
-
-The plugin was developed with OpenAI Codex, consulting Camless's Control Hub implementation, [liquidctl](https://github.com/liquidctl/liquidctl), and the [Fan Control plugin documentation](https://github.com/Rem0o/FanControl.Releases/wiki/Plugins). Thanks to those projects and their contributors for their protocol research, documentation and examples.
-
-This is a C# Fan Control plugin with no Camless runtime dependency. Protocol references and test capture attribution are listed in [docs/protocol.md](docs/protocol.md).
-
-## License
-
-This project's own code and documentation are licensed under the **MIT License**; see [LICENSE](LICENSE). You may use, modify and redistribute them, including commercially, provided you retain the required copyright and permission notice.
-
-Third-party material retains its applicable terms. This license does not relicense Camless, liquidctl, Fan Control or HidSharp.
+Look for **`VID_1E71&PID_2022`** in `InstanceId`: `1E71` is the vendor ID and `2022` is the product ID. A different product ID identifies a different model. Multiple USB/HID entries for one hub are normal. Detection is automatic; you do not need to enter an ID in the plugin.
 
 ## Install
 
-1. Use **x64 Fan Control**. This build uses the V284 public plugin API and targets .NET Standard 2.0; both V284 host variants provide that API.
-2. Exit **NZXT CAM** from its tray icon and disable its automatic startup. Also stop any liquidctl, Camless or RGB tool that opens this same hub. Do not run competing controllers together.
-3. Extract `FanControl.NzxtHub.dll` from the ZIP. If Windows shows an **Unblock** checkbox under the file's **Properties**, select it.
-4. In Fan Control, choose **Settings → Install plugin** and select the DLL. Alternatively, close Fan Control (and stop its service if installed), put the DLL in its `Plugins` folder, and start it again.
-5. Find **NZXT Hub Fan 1–5**. Each control is automatically paired with its RPM sensor. Empty ports have an unavailable reading.
-6. On an idle PC, check one populated port at **70%**, then **100%**. Confirm both the physical fan response and measured RPM before assigning a curve. Repeat for the other populated ports.
+1. Download **FanControl.NzxtHub-0.1.1.zip** from the [release assets](https://github.com/sceiler/fancontrol-nzxt/releases/tag/v0.1.1) and extract it, or download the DLL directly. The **Source code** archives do not contain the compiled plugin.
+2. Exit **NZXT CAM** from its tray icon and disable its automatic startup. Close any other software controlling the same hub, including Camless, liquidctl or RGB utilities.
+3. Unblock the downloaded DLL. Open PowerShell in the folder containing `FanControl.NzxtHub.dll` and run:
 
-Fans on a splitter or combined fan assembly attached to one hub port share that port's speed setting. There is no separate control for each physical fan behind a shared port.
+   ```powershell
+   Unblock-File -LiteralPath '.\FanControl.NzxtHub.dll'
+   ```
 
-The plugin changes fan speeds only. It sends no lighting commands. The last lighting state may remain, but lighting after a restart is not managed by this plugin.
+   Alternatively, right-click the DLL → **Properties → Unblock → Apply**, if shown. [Unblock-File](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/unblock-file) removes the same Windows download block.
+
+4. In Fan Control, choose **Settings → Install plugin** and select the DLL. For manual installation, close Fan Control and stop its service if used, copy the DLL into its `Plugins` folder, then restart.
+5. Find **NZXT Hub Fan 1–5**, with paired RPM sensors. On an idle PC, test each populated port at **70%**, then **100%**, checking RPM and physical fan response before assigning curves. Monitor temperatures while testing.
 
 ## Update or remove
 
-1. Exit Fan Control completely from its tray icon. If service mode is enabled, press **Win + R**, run `services.msc`, and stop the **FanControl** service.
-2. In the installation folder's `Plugins` directory (including any subfolders), find `FanControl.NzxtHub.dll`.
-3. To update, replace that DLL with the new release's DLL and unblock it in **Properties** if needed. Keep one installed copy. To uninstall, remove the DLL.
-4. Restart the service if used, then Fan Control. Keep your configuration files when updating.
-
-After updating, the log should include `[NzxtHub] Starting NZXT Hub plugin 0.1.1.0.` For the reported 512-byte hub, expect `Accepted NZXT 2022 HID collection: input=512, output=512 bytes.` followed by `Found 1 NZXT Control Hub(s).` A `Received first valid fan status` message confirms that telemetry parsing has started; discovery alone does not confirm working speed control.
-
-## Runtime behavior
-
-- Discovers only `VID_1E71&PID_2022`; leaves Kraken coolers and other controller models to their existing drivers.
-- Initializes fan reporting and waits for a valid `67 02` status report before sending any speed command.
-- Uses the reported PWM/DC mode and RPM; does not guess whether a zero-RPM port has a fan.
-- Runs USB reads and writes on a background thread. Host callbacks read cached values.
-- Keeps channel IDs stable using the controller serial number, or its USB path if no serial is available. Moving a serial-less controller to another USB port can change its IDs.
-- Reinitializes and reconnects an already-discovered hub after a communication failure, retrying every five seconds. After attaching an additional hub, use Fan Control's **Refresh sensors detection**.
-- A missing/invalid status becomes unavailable after three seconds. A running worker attempts **100% on managed ports** when status is stale or the host has not called `Update()` for five seconds.
-- Disabling/resetting a previously managed port sets it to **100%** before releasing it. Ports never assigned by Fan Control are left alone. Closing the plugin also attempts 100% on managed ports.
-
-There is no documented command to restore an autonomous fan curve on this controller. **A killed or crashed Fan Control process cannot run cleanup; the hub may retain its last duty.** The software watchdog only works while the plugin's worker is alive, and no software can send a fallback through a broken USB connection.
+1. Exit Fan Control from its tray icon. If using service mode, open `services.msc` and stop the **FanControl** service.
+2. Locate `FanControl.NzxtHub.dll` under the installation's `Plugins` folder, including subfolders. Replace and [unblock](#install) it to update, or delete it to uninstall. Keep only one installed copy and retain your configuration files.
+3. Restart the service if used, then Fan Control.
 
 ## Troubleshooting
 
-If no readings appear, inspect `log.txt` next to `FanControl.exe`; in service mode, also inspect `service_log.txt`. Messages prefixed `[NzxtHub]` include plugin version, discovery count, accepted/rejected report sizes, initialization progress, the first valid status, open failures, stale status and reconnection. For an initialization failure, share the full error block and stack trace, including lines without the prefix, rather than repeatedly calibrating an unresponsive control.
+| Symptom | What to check |
+| --- | --- |
+| Plugin does not appear | Unblock the DLL, check it is in `Plugins`, and restart Fan Control and its service. Use x64 Fan Control. |
+| Hub is not detected | Confirm `VID_1E71&PID_2022`, check USB/power connections and close competing control software. After attaching a hub, use **Refresh sensors detection**. |
+| RPM is unavailable or controls do not respond | Empty ports have no reading. For connected fans, check the logs below before calibrating or assigning curves. |
+| Controls change after moving the hub | Without a serial number, sensor IDs use the USB path. Moving the hub to another USB port can change them. |
+
+Logs are next to `FanControl.exe`: **`log.txt`**, plus **`service_log.txt`** in service mode. Search for `[NzxtHub]`. `Received first valid fan status` confirms telemetry is arriving; device discovery alone does not confirm speed control. When reporting a problem, include the hub model, firmware if known, Fan Control/plugin versions and the full error block with its stack trace.
+
+## Cooling behavior
+
+The plugin waits for valid fan status before sending speed commands. It attempts **100% speed on managed ports** when a control is disabled/reset, during clean shutdown, or when its running worker detects stale telemetry or a stalled host. Unmanaged ports are left alone.
+
+**A process crash or broken USB connection can leave the hub at its last speed.** Full-speed fallback is best effort; the plugin does not restore an autonomous fan curve. See [protocol and fallback details](docs/protocol.md).
 
 ## Build and test
 
-Requirements: **.NET SDK 10.0.403** (or a later patch in that feature band), Python 3 to download build references, and an x64 .NET runtime for tests. On an Apple Silicon development machine, tests need the x64 SDK under Rosetta because Fan Control's public SDK assembly is x64.
+Requires **.NET SDK 10.0.403** (or a later patch in that feature band), Python 3 and an x64 .NET runtime for tests. On Apple Silicon, use the x64 SDK under Rosetta.
 
 ```sh
 python3 scripts/prepare_references.py
@@ -79,16 +71,12 @@ dotnet test -c Release
 python3 scripts/package.py
 ```
 
-The reference script downloads an official, pinned V284 archive and checks its SHA-256 and both DLL hashes. The host's proprietary `FanControl.Plugins.dll` and its `HidSharp.dll` are build references only: neither is committed nor included in the output package. Python, Camless and liquidctl are not runtime dependencies.
+The .NET SDK compiles the C# plugin to `src/FanControl.NzxtHub/bin/Release/netstandard2.0/FanControl.NzxtHub.dll`. The packaging script creates `dist/FanControl.NzxtHub-0.1.1.zip` and its SHA-256 checksum.
 
-### How the DLL is created
+Build references are downloaded from a pinned official Fan Control V284 archive and hash-checked. Fan Control supplies `FanControl.Plugins.dll` and `HidSharp.dll` at runtime; neither is redistributed. Tests cover protocol, session and SDK behavior without Windows or hardware; they do not establish hardware compatibility.
 
-Codex assisted with development; the DLL is compiled by the .NET SDK's C# compiler through MSBuild when you run `dotnet build -c Release`. It is a managed .NET Standard 2.0 class library loaded by Fan Control, not an NZXT driver or firmware image. The project references the pinned Fan Control API and HidSharp assemblies with `Private=false`, so the host supplies them at runtime. `scripts/package.py` packages the already-built DLL, documentation and MIT license into `dist/FanControl.NzxtHub-0.1.1.zip` and writes a SHA-256 checksum; it does not compile code.
+## Credits and license
 
-These commands explain the build process in this repository. The inspected history contains no build attestation establishing the exact environment or commands used for the existing release DLL, and no byte-for-byte rebuild comparison was performed. For future releases, record the source commit, SDK version, build log and artifact hash, and provide the matching source alongside the binary. A checksum verifies integrity against a trusted checksum, not authorship or build provenance.
+Created by [Yi Min Yang](https://www.yiminyang.dev/) ([@sceiler](https://github.com/sceiler)), with OpenAI Codex assistance. Inspired by [Camless](https://github.com/kleju13/camless) by @kleju13 and its contributors, with protocol references from Camless and [liquidctl](https://github.com/liquidctl/liquidctl). See [protocol sources and attribution](docs/protocol.md).
 
-Build output: `src/FanControl.NzxtHub/bin/Release/netstandard2.0/FanControl.NzxtHub.dll`.
-
-Tests cover packet encoding, 64/512-byte HID descriptor capacities and read buffers, padded status packets, a redacted upstream status fixture for the shared packet format, all five ports, invalid reports, stale data, host stalls, shutdown, reset races, reconnection through a fake USB transport, sensor pairing, stable identities and the real Fan Control SDK contract. They do not exercise the Windows HID API or actual hardware.
-
-See [protocol sources](docs/protocol.md) for the commands and evidence used.
+[MIT License](LICENSE). Provided as is, without warranty. Third-party material retains its own terms. This is an independent community project, unaffiliated with NZXT, Fan Control or Camless. NZXT, CAM and Kraken are trademarks of NZXT, Inc.
