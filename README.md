@@ -4,7 +4,7 @@ By [Yi Min Yang](https://www.yiminyang.dev/) · [GitHub: @sceiler](https://githu
 
 A native Fan Control plugin for the **NZXT Control Hub, USB `1E71:2022`**. It exposes the hub's five fan ports as speed controls paired with measured RPM sensors. Fan Control handles the curves, temperature sources, calibration and profiles.
 
-**Status: hardware-test prerelease. Windows Fan Control V284 invoked the plugin and reported the hub's HID descriptors; physical RPM/control operation remains unverified.**
+**Status: working. Fan control on the NZXT Control Hub (`1E71:2022`) has been confirmed by the maintainer on their hardware.**
 
 Download **FanControl.NzxtHub-0.1.1.zip** or the standalone DLL from the [v0.1.1 release assets](https://github.com/sceiler/fancontrol-nzxt/releases/tag/v0.1.1). GitHub's automatic source archives do not contain the compiled plugin.
 
@@ -31,7 +31,7 @@ Third-party material retains its applicable terms. This license does not relicen
 
 ## Install
 
-1. Use **x64 Fan Control**. This build uses the V284 public plugin API and targets .NET Standard 2.0; both V284 host variants provide that API. Hardware operation still needs verification.
+1. Use **x64 Fan Control**. This build uses the V284 public plugin API and targets .NET Standard 2.0; both V284 host variants provide that API.
 2. Exit **NZXT CAM** from its tray icon and disable its automatic startup. Also stop any liquidctl, Camless or RGB tool that opens this same hub. Do not run competing controllers together.
 3. Extract `FanControl.NzxtHub.dll` from the ZIP. If Windows shows an **Unblock** checkbox under the file's **Properties**, select it.
 4. In Fan Control, choose **Settings → Install plugin** and select the DLL. Alternatively, close Fan Control (and stop its service if installed), put the DLL in its `Plugins` folder, and start it again.
@@ -64,15 +64,7 @@ After updating, the log should include `[NzxtHub] Starting NZXT Hub plugin 0.1.1
 
 There is no documented command to restore an autonomous fan curve on this controller. **A killed or crashed Fan Control process cannot run cleanup; the hub may retain its last duty.** The software watchdog only works while the plugin's worker is alive, and no software can send a fallback through a broken USB connection.
 
-## First hardware verification
-
-Record the hub firmware version shown in CAM before closing CAM, then check:
-
-- All populated ports appear with plausible RPM and correctly match the physical port numbers.
-- Changing one port leaves the others' speeds unchanged; 70% and 100% produce an appropriate response.
-- A saved curve survives a Fan Control restart without being assigned to a different port.
-- Disabling a managed control raises that port to full speed, and exiting the hardware-controlling service raises managed ports to full speed.
-- Sleep/resume restores readings and curve control.
+## Troubleshooting
 
 If no readings appear, inspect `log.txt` next to `FanControl.exe`; in service mode, also inspect `service_log.txt`. Messages prefixed `[NzxtHub]` include plugin version, discovery count, accepted/rejected report sizes, initialization progress, the first valid status, open failures, stale status and reconnection. For an initialization failure, share the full error block and stack trace, including lines without the prefix, rather than repeatedly calibrating an unresponsive control.
 
@@ -91,7 +83,7 @@ The reference script downloads an official, pinned V284 archive and checks its S
 
 ### How the DLL is created
 
-Codex assisted with development; the DLL is compiled by the .NET SDK's C# compiler through MSBuild when you run `dotnet build -c Release`. It is a managed .NET Standard 2.0 class library loaded by Fan Control, not an NZXT driver or firmware image. The project references the pinned Fan Control API and HidSharp assemblies with `Private=false`, so the host supplies them at runtime. `scripts/package.py` packages the already-built DLL, documentation into `dist/FanControl.NzxtHub-0.1.1.zip` and writes a SHA-256 checksum; it does not compile code.
+Codex assisted with development; the DLL is compiled by the .NET SDK's C# compiler through MSBuild when you run `dotnet build -c Release`. It is a managed .NET Standard 2.0 class library loaded by Fan Control, not an NZXT driver or firmware image. The project references the pinned Fan Control API and HidSharp assemblies with `Private=false`, so the host supplies them at runtime. `scripts/package.py` packages the already-built DLL, documentation and MIT license into `dist/FanControl.NzxtHub-0.1.1.zip` and writes a SHA-256 checksum; it does not compile code.
 
 These commands explain the build process in this repository. The inspected history contains no build attestation establishing the exact environment or commands used for the existing release DLL, and no byte-for-byte rebuild comparison was performed. For future releases, record the source commit, SDK version, build log and artifact hash, and provide the matching source alongside the binary. A checksum verifies integrity against a trusted checksum, not authorship or build provenance.
 
