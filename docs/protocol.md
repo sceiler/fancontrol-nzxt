@@ -47,11 +47,9 @@ No source inspected documents an automatic/BIOS hand-back command or a stored th
 
 ## Hardware verification record
 
-- User confirmed Windows hardware ID `VID_1E71&PID_2022`.
-- Windows Fan Control V284 invoked 0.1.0 on 2026-10-26 and enumerated a matching HID collection with input/output capacities of 512 bytes. The old input-size check rejected it; no USB initialization or control was reached.
-- Version 0.1.1 reproduces and fixes that rejection and the undersized read buffer in automated tests. Hardware retest: **pending**.
-- Firmware: not yet recorded.
-- Fan Control: latest release requested; build references pinned to V284.
-- Physical RPM/control, fan-port isolation, reset, shutdown and sleep/resume: **pending**.
-
-Do not change this record to verified based only on automated tests.
+- Maintainer: Yi Min Yang (@sceiler).
+- Hardware: NZXT Control Hub, Windows hardware ID `VID_1E71&PID_2022`, five fan ports.
+- The maintainer confirmed on 2026-10-27 that the plugin works and controls fans on their hardware.
+- Fan Control V284 previously reported input/output HID capacities of 512 bytes. Version 0.1.1 fixes the earlier discovery rejection and undersized read buffer.
+- Build references are pinned to Fan Control V284. The firmware version and current host version were not supplied with the working-hardware confirmation.
+- This records the maintainer's hardware confirmation, rather than inferring operation from automated tests. Separate results for fan-port isolation, reset, shutdown and sleep/resume were not supplied.
